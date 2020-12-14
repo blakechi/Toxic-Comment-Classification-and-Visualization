@@ -1,0 +1,21 @@
+.layout {
+    background-color: white;
+    /* background-color: #282c34; */
+    font-size: calc(10px + 2vmin);
+    color: green;
+}
+.react-grid-item {
+    background-color: black;
+}
+.react-grid-item.react-grid-placeholder {
+    background-color: royalblue;
+    opacity: 0.5;
+}
+.grid-anchor {
+    line-height: 0.9em;
+    color: #efefef;
+    float: left;
+    border: 1px solid rgba(255, 255, 255, 0);
+    border-radius: 8px;
+    margin: 5px 5px;
+}
