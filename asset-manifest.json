@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/bert_vis/static/css/main.932a0604.chunk.css",
+    "main.js": "/bert_vis/static/js/main.f5ef3121.chunk.js",
+    "main.js.map": "/bert_vis/static/js/main.f5ef3121.chunk.js.map",
+    "runtime-main.js": "/bert_vis/static/js/runtime-main.3dd33918.js",
+    "runtime-main.js.map": "/bert_vis/static/js/runtime-main.3dd33918.js.map",
+    "static/css/2.0fe8871e.chunk.css": "/bert_vis/static/css/2.0fe8871e.chunk.css",
+    "static/js/2.1fb35bf3.chunk.js": "/bert_vis/static/js/2.1fb35bf3.chunk.js",
+    "static/js/2.1fb35bf3.chunk.js.map": "/bert_vis/static/js/2.1fb35bf3.chunk.js.map",
+    "static/js/3.02562d02.chunk.js": "/bert_vis/static/js/3.02562d02.chunk.js",
+    "static/js/3.02562d02.chunk.js.map": "/bert_vis/static/js/3.02562d02.chunk.js.map",
+    "index.html": "/bert_vis/index.html",
+    "static/css/2.0fe8871e.chunk.css.map": "/bert_vis/static/css/2.0fe8871e.chunk.css.map",
+    "static/css/main.932a0604.chunk.css.map": "/bert_vis/static/css/main.932a0604.chunk.css.map",
+    "static/js/2.1fb35bf3.chunk.js.LICENSE.txt": "/bert_vis/static/js/2.1fb35bf3.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.3dd33918.js",
+    "static/css/2.0fe8871e.chunk.css",
+    "static/js/2.1fb35bf3.chunk.js",
+    "static/css/main.932a0604.chunk.css",
+    "static/js/main.f5ef3121.chunk.js"
+  ]
+}
