@@ -1,13 +1,13 @@
 import React, { Component } from "react";
 import "./css/App.css";
 import Grid from "./component/Grid";
-import Graphs from "./data/ENZYMES_details.json";
+import Graphs from "./data/toxic_comment_details.json";
 
 class App extends Component {
     constructor(props) {
         super(props);
 
-        const defaultGraphKey = "train_1";
+        const defaultGraphKey = "0";
         this.state = {
             selectedGraphKey: defaultGraphKey,
         };

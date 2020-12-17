@@ -82,7 +82,7 @@ class Grid extends Component {
                     className="layout"
                     layout={layout}
                     cols={window.innerWidth - 20}
-                    rowHeight={50}
+                    rowHeight={90}
                     compactType={"horizontal"}
                     verticalCompact={true}
                 >
@@ -94,7 +94,7 @@ class Grid extends Component {
                             onChange={onChangeGraphSelector}
                         />
                     </GridWrapper>
-                    <GridWrapper key="graph">
+                    {/* <GridWrapper key="graph">
                         <FlatGraphPlot graph={selectedGraph} />
                     </GridWrapper>
                     <GridWrapper key="heatmap">
@@ -108,7 +108,7 @@ class Grid extends Component {
                     </GridWrapper>
                     <GridWrapper key="anchor">
                         <div className="grid-anchor" />
-                    </GridWrapper>
+                    </GridWrapper> */}
                 </AutoWidthGridLayout>
             </React.Fragment>
         );

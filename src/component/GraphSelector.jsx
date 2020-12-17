@@ -3,7 +3,7 @@ import "../css/GraphSelector.css";
 const GraphSelector = ({ options, onChange }) => {
     return (
         <div className="selector-box">
-            <div className="title">Graph</div>
+            <div className="title">Sentence</div>
             <select
                 className="custom-select"
                 id="groupSelect"

@@ -13,16 +13,16 @@ class Scene extends Component {
         this.currentGraphKey = selectedGraphKey;
         this.currentGraph = selectedGraph;
         this.color_pick = ["rgb(0,0,254)", "rgb(0,204,0)", "rgb(102,0,204)"];
-
+        this.original_sphere_color = "rgb(200,200,200)";
+        this.original_color = new THREE.Color();
         //transition visible var
-        this.threshold = 0.0;
+        this.threshold = 0.05;
 
         //name var
         this.str1 = "node";
-        this.str2 = "edge";
-        this.str3 = "group";
-        this.str4 = "tran";
-        this.str5 = "spritey";
+        this.str2 = "group";
+        this.str3 = "tran";
+        this.str4 = "spritey";
 
         const SCREEN_WIDTH = window.innerWidth - 20; // Seems that this.mount.clientWidth won't update immediately
         const SCREEN_HEIGHT = this.mount.clientHeight; // Grid Height
@@ -66,7 +66,7 @@ class Scene extends Component {
         this.todoList = [];
         this.raycaster = new THREE.Raycaster(); // create once
         this.mouse = new THREE.Vector2(); // create once
-        this.trans = new THREE.Vector3(0, 0, 80);
+        this.trans = new THREE.Vector3(0, 10, 20);
 
         //for this.scene2 var
         this.scene2 = new THREE.Scene();
@@ -87,16 +87,14 @@ class Scene extends Component {
         this.renderer2.setSize(this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
         this.axesHelper.appendChild(this.renderer2.domElement);
 
-        //data var: sphere_data, edge_data, group_data, transition_data
+        //data var: sphere_data, group_data, transition_data
         this.sphere_data = [];
-        this.edge_data = [];
         this.transition_data = [];
 
         this.group_data = [
-            new THREE.Vector3(-750, 0, 0),
-            new THREE.Vector3(-250, 0, 0),
-            new THREE.Vector3(250, 0, 0),
-            new THREE.Vector3(750, 0, 0),
+            new THREE.Vector3(0, 450, 0),
+            new THREE.Vector3(0, 150, 0),
+            new THREE.Vector3(0, -150, 0),
         ];
 
         this.output_transition_data = [];
@@ -168,51 +166,23 @@ class Scene extends Component {
         this.render_scene();
     };
 
-    make_sphere = (sphere_name, sphere_position, sphere_color) => {
+    make_sphere = (sphere_name, sphere_position, text) => {
         var sphereGeometry = new THREE.SphereGeometry(12, 32, 16);
-        var sphereMaterial = new THREE.MeshBasicMaterial({ color: sphere_color });
+        var sphereMaterial = new THREE.MeshBasicMaterial({ color: this.original_sphere_color });
         sphereMaterial.transparent = true;
         var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         sphere.name = sphere_name;
         sphere.position.copy(sphere_position);
         sphere.castShadow = true;
+        sphere.userData = text;
         this.targetList.push(sphere);
         return sphere;
-    };
-
-    make_edge = (cylinder_name, group, sphere1_name, sphere2_name, value) => {
-        var position1 = group.getObjectByName(sphere1_name).position.clone();
-        var position2 = group.getObjectByName(sphere2_name).position.clone();
-        var distance = position1.distanceTo(position2);
-        var cylinderGeometry = new THREE.CylinderGeometry(2, 2, distance, 32);
-        var cylinderMaterial = new THREE.MeshBasicMaterial({
-            color: "rgb(125,125,125)",
-        });
-        cylinderMaterial.transparent = true;
-        cylinderGeometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, distance / 2, 0));
-        // rotate it the right way for lookAt to work
-        cylinderGeometry.applyMatrix4(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(90)));
-        // Make a mesh with the geometry
-        var cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
-        // Position it where we want
-        cylinder.position.copy(position1);
-        // And make it point to where we want
-        cylinder.lookAt(position2);
-
-        // cylinder.position.copy(center);
-        cylinder.castShadow = true;
-        cylinder.name = cylinder_name;
-        // console.log(cylinder);
-        // targetList.push(cylinder);
-
-        return cylinder;
     };
 
     make_group = (group_name, group_position) => {
         var group = new THREE.Group();
 
         var sphere = [];
-        var edge = [];
 
         for (let i = 0; i < this.sphere_data.length; i++) {
             sphere.push([
@@ -220,23 +190,10 @@ class Scene extends Component {
                 this.sphere_data[i][0],
                 this.sphere_data[i][1],
             ]);
-            for (let j = i; j < this.sphere_data.length; j++) {
-                edge.push([
-                    (i * this.sphere_data.length + j).toString().concat(this.str2),
-                    i.toString().concat(this.str1),
-                    j.toString().concat(this.str1),
-                    this.edge_data[i][j],
-                ]);
-            }
         }
 
-        sphere.forEach((ele) => group.add(this.make_sphere(ele[0], ele[1], ele[2])));
+        sphere.forEach((ele) => group.add(this.make_sphere(ele[0], ele[1],ele[2])));
 
-        edge.forEach((ele) => {
-            if (ele[3] === 1) {
-                group.add(this.make_edge(ele[0], group, ele[1], ele[2], ele[3]));
-            }
-        });
 
         group.position.copy(group_position);
         group.name = group_name;
@@ -249,7 +206,7 @@ class Scene extends Component {
         var group = [];
         this.graph_group.name = "graph_group";
         for (let i = 0; i < this.group_data.length; i++) {
-            group.push([i.toString().concat(this.str3), this.group_data[i]]);
+            group.push([i.toString().concat(this.str2), this.group_data[i]]);
         }
 
         group.map((ele) => this.graph_group.add(this.make_group(ele[0], ele[1])));
@@ -387,26 +344,35 @@ class Scene extends Component {
     };
 
     make_scene = () => {
-        for (let i = 0; i < this.currentGraph.node_positions.length; i++) {
+        var node_num = this.currentGraph.tokens.length;
+        var node_group_num = 30;
+        var node_distance = 50;
+        var node_start = (node_group_num-1) * node_distance / 2.0 * (-1);
+        for (let i = 0; i < node_num; i++) {
             this.sphere_data.push([
                 new THREE.Vector3(
-                    (this.currentGraph.node_positions[i][0] - 0.5) * 400,
-                    (this.currentGraph.node_positions[i][1] - 0.5) * 400,
-                    (this.currentGraph.node_positions[i][2] - 0.5) * 400
+                    (node_start+(i%node_group_num) * node_distance),
+                    Math.floor(i/node_group_num)*(-1) * node_distance,
+                    0
                 ),
-                this.color_pick[this.currentGraph.node_label[i]],
+                this.currentGraph.tokens[i],
             ]);
         }
-        this.edge_data = this.currentGraph.adjacency_matrix;
-        this.transition_data = this.currentGraph.attention_weights;
+        for(let i=0;i<2;i++)
+        {
+            this.transition_data.push(this.currentGraph.attention_weights[i][0]);
+        }
 
         this.make_graph();
-        this.output_transition_data = this.currentGraph.cls_attention_weights;
+        this.original_color = this.graph_group.children[0].children[0].material.color.clone();
+        for(let i=0;i<node_num;i++)
+        {
+            this.output_transition_data.push(this.currentGraph.attention_weights[2][5][i][0]);
+        }
 
-        var output_sphere_position = new THREE.Vector3(0, 250, 0);
-        output_sphere_position.add(this.group_data[3]);
+        var output_sphere_position = new THREE.Vector3(0, -450, 0);
         var sphereGeometry = new THREE.SphereGeometry(24, 32, 16);
-        var sphereMaterial = new THREE.MeshBasicMaterial({ color: "rgb(255,255,255)" });
+        var sphereMaterial = new THREE.MeshBasicMaterial({ color: "rgb(0,255,0)" });
         sphereMaterial.transparent = true;
         this.output_sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         this.output_sphere.name = "output_sphere";
@@ -414,12 +380,12 @@ class Scene extends Component {
         this.scene.add(this.output_sphere);
         this.targetList.push(this.output_sphere);
 
-        var output_group_num = this.group_data.length - 2;
+        var output_group_num =  2;
         for (let i = 0; i < this.sphere_data.length; i++) {
             if (this.output_transition_data[i] > this.threshold) {
                 var output_transition = this.make_output_transition(
                     i.toString().concat("output_transition"),
-                    output_group_num.toString().concat(this.str3),
+                    output_group_num.toString().concat(this.str2),
                     i.toString().concat(this.str1),
                     this.output_transition_data[i]
                 );
@@ -440,9 +406,9 @@ class Scene extends Component {
                             k
                         )
                             .toString()
-                            .concat(this.str4),
-                        i.toString().concat(this.str3),
-                        (i + 1).toString().concat(this.str3),
+                            .concat(this.str3),
+                        i.toString().concat(this.str2),
+                        (i + 1).toString().concat(this.str2),
                         j.toString().concat(this.str1),
                         k.toString().concat(this.str1),
                         this.transition_data[i][j][k],
@@ -468,7 +434,7 @@ class Scene extends Component {
         for (let i = 0; i < this.group_data.length; i++) {
             for (let j = 0; j < graph_group_num; j++) {
                 this.graph_group.children[0].remove(this.graph_group.children[0].children[0]);
-                console.log("finished sphere and edge");
+                console.log("finished sphere");
             }
             this.graph_group.remove(this.graph_group.children[0]);
             console.log("finished");
@@ -485,7 +451,6 @@ class Scene extends Component {
         this.scene.remove(this.transition_output_group);
         this.output_transition_data = [];
         this.sphere_data = [];
-        this.edge_data = [];
         this.transition_data = [];
         this.targetList = [];
     };
@@ -515,7 +480,6 @@ class Scene extends Component {
         // create an array containing all objects in the this.scene with which the ray intersects
         this.raycaster.setFromCamera(this.mouse, this.camera);
         var intersects = this.raycaster.intersectObjects(this.targetList);
-
         // INTERSECTED = the object in the this.scene currently closest to the this.camera
         //		and intersected by the Ray projected from the mouse position
 
@@ -533,6 +497,7 @@ class Scene extends Component {
                     for (let i = 0; i < this.group_data.length; i++) {
                         for (let j = 0; j < this.graph_group.children[i].children.length; j++) {
                             this.graph_group.children[i].children[j].material.opacity = 1.0;
+                            this.graph_group.children[i].children[j].material.color = this.original_color.clone();
                         }
                     }
                     for (let i = 0; i < this.trans_group.children.length; i++) {
@@ -568,9 +533,12 @@ class Scene extends Component {
                     while (this.todoList.length !== 0) {
                         var todoObject = this.todoList[this.todoList.length - 1];
                         this.todoList.pop();
-
-                        this.spritey = this.makeTextSprite(parseInt(todoObject.name).toString(), {
-                            fontsize: 75,
+                        if(todoObject.userData.startsWith("##"))
+                        {
+                            todoObject.userData = todoObject.userData.substring(2)
+                        }
+                        this.spritey = this.makeTextSprite(todoObject.userData, {
+                            fontsize: 100,
                             fontface: "Georgia",
                             borderColor: { r: 0, g: 0, b: 255, a: 1.0 },
                         });
@@ -578,7 +546,7 @@ class Scene extends Component {
                         temp_position.add(todoObject.parent.position);
                         this.spritey.position.copy(temp_position);
                         this.spritey.position.add(this.trans);
-                        this.spritey.name = todoObject.name.concat(this.str5);
+                        this.spritey.name = todoObject.name.concat(this.str4);
                         this.spritey_name_list.push(this.spritey.name);
                         // console.log(spritey);
                         this.scene.add(this.spritey);
@@ -607,53 +575,7 @@ class Scene extends Component {
                                     this.todoList.push(
                                         this.graph_group.children[group_num - 1].children[num]
                                     );
-                                }
-                            }
-                        }
-                    }
-
-                    //set object connection in its own graph
-                    sphere_num = parseInt(this.INTERSECTED.name);
-                    group_num = parseInt(this.INTERSECTED.parent.name);
-                    var temp_num;
-                    for (let i = 0; i < this.group_data.length; i++) {
-                        if (i === group_num) {
-                            for (let j = 0; j < this.sphere_data.length; j++) {
-                                if (j !== sphere_num) {
-                                    this.INTERSECTED.parent.children[j].material.opacity = 0.33;
-                                }
-                            }
-                            for (
-                                let j = this.sphere_data.length;
-                                j < this.INTERSECTED.parent.children.length;
-                                j++
-                            ) {
-                                if (
-                                    parseInt(this.INTERSECTED.parent.children[j].name) %
-                                        this.sphere_data.length ===
-                                    sphere_num
-                                ) {
-                                    temp_num = Math.floor(
-                                        parseInt(this.INTERSECTED.parent.children[j].name) /
-                                            this.sphere_data.length
-                                    );
-                                    this.INTERSECTED.parent.children[
-                                        temp_num
-                                    ].material.opacity = 1.0;
-                                    this.INTERSECTED.parent.children[j].material.opacity = 1.0;
-                                } else if (
-                                    Math.floor(
-                                        parseInt(this.INTERSECTED.parent.children[j].name) /
-                                            this.sphere_data.length
-                                    ) === sphere_num
-                                ) {
-                                    temp_num =
-                                        parseInt(this.INTERSECTED.parent.children[j].name) %
-                                        this.sphere_data.length;
-                                    this.INTERSECTED.parent.children[
-                                        temp_num
-                                    ].material.opacity = 1.0;
-                                    this.INTERSECTED.parent.children[j].material.opacity = 1.0;
+                                    this.graph_group.children[group_num - 1].children[num].material.color = this.trans_group.children[i].material.color.clone();
                                 }
                             }
                         }
@@ -670,22 +592,58 @@ class Scene extends Component {
                             parseInt(this.transition_output_group.children[i].name)
                         ];
                         sphere.material.opacity = 1.0;
-                        this.spritey = this.makeTextSprite(
-                            parseInt(this.transition_output_group.children[i].name).toString(),
-                            {
-                                fontsize: 75,
-                                fontface: "Georgia",
-                                borderColor: { r: 0, g: 0, b: 255, a: 1.0 },
-                            }
-                        );
-                        temp_position = sphere.position.clone();
-                        temp_position.add(sphere.parent.position);
+                        sphere.material.color = this.transition_output_group.children[i].material.color.clone();
+                        this.todoList.push(sphere);
+                    }
+                    while (this.todoList.length !== 0) {
+                        var todoObject = this.todoList[this.todoList.length - 1];
+                        this.todoList.pop();
+                        if(todoObject.userData.startsWith("##"))
+                        {
+                            todoObject.userData = todoObject.userData.substring(2)
+                        }
+                        this.spritey = this.makeTextSprite(todoObject.userData, {
+                            fontsize: 100,
+                            fontface: "Georgia",
+                            borderColor: { r: 0, g: 0, b: 255, a: 1.0 },
+                        });
+                        var temp_position = todoObject.position.clone();
+                        temp_position.add(todoObject.parent.position);
                         this.spritey.position.copy(temp_position);
                         this.spritey.position.add(this.trans);
-                        this.spritey.name = sphere.name.concat(this.str5);
+                        this.spritey.name = todoObject.name.concat(this.str4);
                         this.spritey_name_list.push(this.spritey.name);
                         // console.log(spritey);
                         this.scene.add(this.spritey);
+
+                        todoObject.material.opacity = 1.0;
+                        sphere_num = parseInt(todoObject.name);
+                        group_num = parseInt(todoObject.parent.name);
+                        // console.log(sphere_num,group_num);
+                        if (group_num !== 0) {
+                            for (let i = 0; i < this.trans_group.children.length; i++) {
+                                var test_num =
+                                    parseInt(this.trans_group.children[i].name) -
+                                    (group_num - 1) *
+                                        this.sphere_data.length *
+                                        this.sphere_data.length;
+                                if (
+                                    test_num % this.sphere_data.length === sphere_num &&
+                                    test_num < this.sphere_data.length * this.sphere_data.length &&
+                                    test_num > 0
+                                ) {
+                                    // console.log(test_num);
+                                    // this.trans_group.children[i].material.opacity = 1.0;
+                                    this.trans_group.children[i].visible = true;
+                                    var num = Math.floor(test_num / this.sphere_data.length);
+                                    // console.log(graph_group.children[(group_num-1)].children[num]);
+                                    this.todoList.push(
+                                        this.graph_group.children[group_num - 1].children[num]
+                                    );
+                                    this.graph_group.children[group_num - 1].children[num].material.color = this.trans_group.children[i].material.color.clone();
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -706,6 +664,7 @@ class Scene extends Component {
                 for (let i = 0; i < this.group_data.length; i++) {
                     for (let j = 0; j < this.graph_group.children[i].children.length; j++) {
                         this.graph_group.children[i].children[j].material.opacity = 1.0;
+                        this.graph_group.children[i].children[j].material.color = this.original_color.clone();
                     }
                 }
                 for (let i = 0; i < this.trans_group.children.length; i++) {
