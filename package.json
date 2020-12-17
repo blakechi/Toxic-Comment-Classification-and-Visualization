@@ -2,7 +2,7 @@
   "name": "graph_visualization",
   "version": "0.1.0",
   "private": true,
-  "homepage": " https://blakechi.github.io/graph_vis/",
+  "homepage": "https://blakechi.github.io/bert_vis/",
   "dependencies": {
     "@nivo/core": "^0.66.0",
     "@nivo/network": "^0.66.0",
